@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Manager v{{ version }} - Управление Email списком</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 15px;
+        }
+        .title-section h1 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .version {
+            color: #667eea;
+            font-size: 12px;
+            font-family: monospace;
+        }
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .stat-card {
+            background: #f5f5f5;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .stat-number {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 18px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        .btn:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+        }
+        .btn-danger {
+            background: #e74c3c;
+        }
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        .btn-success {
+            background: #27ae60;
+        }
+        .btn-success:hover {
+            background: #219a52;
+        }
+        .btn-warning {
+            background: #f39c12;
+        }
+        .btn-warning:hover {
+            background: #e67e22;
+        }
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        .table-wrapper {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        th a {
+            color: white !important;
+            text-decoration: none;
+            display: block;
+            padding: 4px 0;
+        }
+        th a:hover {
+            color: #ffd700 !important;
+        }
+        tr:hover {
+            background: #f5f5f5;
+        }
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .badge-active {
+            background: #27ae60;
+            color: white;
+        }
+        .badge-inactive {
+            background: #e74c3c;
+            color: white;
+        }
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+        .flash {
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .flash.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .flash.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #999;
+            font-size: 12px;
+        }
+        .sort-indicator {
+            font-size: 10px;
+            margin-left: 4px;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            table {
+                font-size: 12px;
+            }
+            th, td {
+                padding: 8px;
+            }
+            .actions {
+                flex-direction: column;
+                gap: 5px;
+            }
+            .header {
+                flex-direction: column;
+                gap: 15px;
+            }
+            .stats {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title-section">
+                <h1>📧 Email Manager</h1>
+                <div class="version">Версия: {{ version }}</div>
+                <div class="stats" id="stats">
+                    <div class="stat-card">📊 Загрузка статистики...</div>
+                </div>
+            </div>
+            <div>
+                <a href="/add" class="btn btn-success">➕ Добавить email</a>
+            </div>
+        </div>
+
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        {% if emails %}
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>
+                            <a href="?sort=id&order={% if sort_by == 'id' and sort_order == 'desc' %}asc{% else %}desc{% endif %}">
+                                ID
+                                {% if sort_by == 'id' %}
+                                    <span class="sort-indicator">{% if sort_order == 'desc' %}▼{% else %}▲{% endif %}</span>
+                                {% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="?sort=email&order={% if sort_by == 'email' and sort_order == 'desc' %}asc{% else %}desc{% endif %}">
+                                Email
+                                {% if sort_by == 'email' %}
+                                    <span class="sort-indicator">{% if sort_order == 'desc' %}▼{% else %}▲{% endif %}</span>
+                                {% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="?sort=name&order={% if sort_by == 'name' and sort_order == 'desc' %}asc{% else %}desc{% endif %}">
+                                Имя
+                                {% if sort_by == 'name' %}
+                                    <span class="sort-indicator">{% if sort_order == 'desc' %}▼{% else %}▲{% endif %}</span>
+                                {% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="?sort=is_active&order={% if sort_by == 'is_active' and sort_order == 'desc' %}asc{% else %}desc{% endif %}">
+                                Статус
+                                {% if sort_by == 'is_active' %}
+                                    <span class="sort-indicator">{% if sort_order == 'desc' %}▼{% else %}▲{% endif %}</span>
+                                {% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="?sort=subscribed_at&order={% if sort_by == 'subscribed_at' and sort_order == 'desc' %}asc{% else %}desc{% endif %}">
+                                Дата подписки
+                                {% if sort_by == 'subscribed_at' %}
+                                    <span class="sort-indicator">{% if sort_order == 'desc' %}▼{% else %}▲{% endif %}</span>
+                                {% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="?sort=source&order={% if sort_by == 'source' and sort_order == 'desc' %}asc{% else %}desc{% endif %}">
+                                Источник
+                                {% if sort_by == 'source' %}
+                                    <span class="sort-indicator">{% if sort_order == 'desc' %}▼{% else %}▲{% endif %}</span>
+                                {% endif %}
+                            </a>
+                        </th>
+                        <th style="text-align: center;">Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for email in emails %}
+                    <tr>
+                        <td>{{ email[0] }}</td>
+                        <td><strong>{{ email[1] }}</strong></td>
+                        <td>{{ email[2] or '-' }}</td>
+                        <td>
+                            <span class="badge {% if email[3] %}badge-active{% else %}badge-inactive{% endif %}">
+                                {% if email[3] %}🟢 Активен{% else %}🔴 Неактивен{% endif %}
+                            </span>
+                        </td>
+                        <td>{{ email[4].strftime('%Y-%m-%d %H:%M') if email[4] else '-' }}</td>
+                        <td>{{ email[5] or '-' }}</td>
+                        <td class="actions">
+							<a href="/subscribe/{{ email[0] }}" 
+								class="btn btn-info btn-sm" 
+								style="background: #17a2b8; color: white; padding: 5px 10px; border-radius: 5px; text-decoration: none; font-size: 12px;">📬 Подписки
+							</a>
+                            <a href="/toggle/{{ email[0] }}?sort={{ sort_by }}&order={{ sort_order }}" 
+                               class="btn btn-warning btn-sm">
+                                {% if email[3] %}🔴 Деактивировать{% else %}🟢 Активировать{% endif %}
+                            </a>
+                            <a href="/edit/{{ email[0] }}?sort={{ sort_by }}&order={{ sort_order }}" 
+                               class="btn btn-sm">✏️ Редактировать</a>
+                            <a href="/delete/{{ email[0] }}?sort={{ sort_by }}&order={{ sort_order }}" 
+                               class="btn btn-danger btn-sm" 
+                               onclick="return confirm('Вы уверены, что хотите удалить {{ email[1] }}?')">🗑️ Удалить</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="text-align: center; padding: 40px; color: #999;">📭 Нет записей в базе данных. Добавьте первый email!</p>
+        {% endif %}
+        
+        <div class="footer">
+            <p>© 2026 Email Manager | База данных: PostgreSQL | Работает на Flask</p>
+            <p>🔧 API доступен: <code>/api/emails</code> | <code>/health</code> | <code>/stats</code> | <code>/version</code></p>
+        </div>
+    </div>
+    
+    <script>
+        fetch('/stats')
+            .then(response => response.json())
+            .then(data => {
+                if (!data.error) {
+                    document.getElementById('stats').innerHTML = `
+                        <div class="stat-card">📧 Всего: <span class="stat-number">${data.total}</span></div>
+                        <div class="stat-card">🟢 Активных: <span class="stat-number">${data.active}</span></div>
+                        <div class="stat-card">🔴 Неактивных: <span class="stat-number">${data.inactive}</span></div>
+                        <div class="stat-card">📊 Источников: <span class="stat-number">${data.sources_count}</span></div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка загрузки статистики:', error);
+            });
+    </script>
+</body>
+</html>

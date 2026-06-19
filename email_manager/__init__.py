@@ -1,0 +1,1 @@
+# email_manager package

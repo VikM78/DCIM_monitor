@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Подписки на события - {{ email[1] }}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 { color: #333; margin-bottom: 10px; }
+        .subtitle { color: #666; margin-bottom: 20px; font-size: 14px; }
+        .schedule-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 2px solid #eee;
+            border-radius: 8px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .schedule-item:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+        .schedule-item.selected {
+            border-color: #667eea;
+            background: #edf0ff;
+        }
+        .schedule-item label {
+            display: flex;
+            align-items: flex-start;
+            cursor: pointer;
+            font-size: 15px;
+        }
+        .schedule-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 15px;
+            margin-top: 3px;
+            cursor: pointer;
+        }
+        .schedule-info { flex: 1; }
+        .schedule-name { font-weight: 600; color: #333; }
+        .schedule-details { font-size: 13px; color: #777; margin-top: 3px; }
+        .schedule-events { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+        .event-badge {
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            background: #f0f0f0;
+            color: #666;
+        }
+        .event-badge.active {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 25px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+        .btn:hover { background: #764ba2; transform: translateY(-2px); }
+        .btn-secondary { background: #95a5a6; margin-left: 10px; }
+        .btn-secondary:hover { background: #7f8c8d; }
+        .flash-messages { margin-bottom: 20px; }
+        .flash { padding: 12px; border-radius: 5px; margin-bottom: 10px; }
+        .flash.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .flash.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .no-schedules { color: #999; text-align: center; padding: 30px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📬 Подписки на события</h1>
+        <div class="subtitle">
+            Email: <strong>{{ email[1] }}</strong> ({{ email[2] or 'без имени' }})
+        </div>
+
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <form method="POST">
+            <p style="color: #666; margin-bottom: 15px;">
+                Выберите расписания, на которые хотите подписаться:
+            </p>
+
+            {% if schedules %}
+                {% for schedule in schedules %}
+                    <div class="schedule-item {% if schedule[0] in subscribed_ids %}selected{% endif %}">
+                        <label>
+                            <input type="checkbox" name="subscriptions" value="{{ schedule[0] }}"
+                                   {% if schedule[0] in subscribed_ids %}checked{% endif %}>
+                            <div class="schedule-info">
+                                <div class="schedule-name">{{ schedule[1] }}</div>
+                                <div class="schedule-details">
+                                    {% if schedule[3] %}
+                                        ⚡ Без времени
+                                    {% else %}
+                                        🕐 По расписанию
+                                    {% endif %}
+                                    | Тип: {{ schedule[2] or 'Все' }}
+                                </div>
+                                <div class="schedule-events">
+                                    {% if schedule[4] %}<span class="event-badge active">🟡 Возникновение</span>{% endif %}
+                                    {% if schedule[5] %}<span class="event-badge active">🟢 Исчезновение</span>{% endif %}
+                                    {% if schedule[6] %}<span class="event-badge active">🔵 Подтверждение</span>{% endif %}
+                                    {% if not schedule[4] and not schedule[5] and not schedule[6] %}
+                                        <span class="event-badge">❌ Нет событий</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                {% endfor %}
+
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn">💾 Сохранить подписки</button>
+                    <a href="/" class="btn btn-secondary">❌ Отмена</a>
+                </div>
+            {% else %}
+                <div class="no-schedules">
+                    <p>📭 Нет активных расписаний.</p>
+                    <p style="font-size: 13px; margin-top: 5px;">Создайте их в <strong>Планировщике рассылки</strong>.</p>
+                    <a href="/" class="btn" style="margin-top: 15px;">⬅️ Назад</a>
+                </div>
+            {% endif %}
+        </form>
+    </div>
+</body>
+</html>

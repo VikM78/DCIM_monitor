@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+env/
+venv/
+.venv
+*.egg-info/
+dist/
+build/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+monitor_*.log
+
+# PID files
+*.pid
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Project specific
+*.docx
+*.bak
+*.tmp
+*.pyc
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Secrets
+.secret_key
+*.pem
+*.key
+
+# Temporary
+tree.txt
+
+# Secrets (не в Git!)
+.secrets/
+.env
